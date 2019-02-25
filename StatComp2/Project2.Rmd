@@ -1,0 +1,68 @@
+---
+title: "Statcomp2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+#seed()
+# Metropolis-Hastings algorithm
+library(spam) # load the data
+str(Oral) # see structure of data
+attach(Oral) # allow direct referencing to Y and E
+# load some libraries to generate nice map plots
+library(fields, warn.conflict=FALSE)
+library(colorspace)
+col <- diverge_hcl(8) # blue - red
+# use a function provided by spam to plot the map together with the mortality rates
+germany.plot(Oral$Y/Oral$E, col=col, legend=TRUE)
+# Init values
+burn.in <- 5000
+num.samples <- 5000
+ku.alpha <- 1
+ku.beta <- 0.01
+kv.alpha <- 1
+kv.beta <- 0.01
+etta.old <- rep(0, 544)
+etta.list <- c()
+u <- rep(0, 544)
+R_matrix <- load("tma4300_ex2_Rmatrix.Rdata")
+for(i in 1:(burn.in+num.samples)){
+  b <- Oral$Y+(etta.old-1)%*%Oral$E%*%exp(etta.old)
+  c <- t(exp(etta.old))%*%Oral$E
+  ku <- rgamma(1, ku.alpha, ku.beta+t(u)%*%R%*%u/2)
+  kv <- rgamma(1, kv.alpha, kv.beta+t(etta-u)%*%(etta-u)/2)
+  u <- rnorm(1, etta*kv, ku*R+diag(544)*kv)
+  etta <- rnorm(1, t(kv*u+b), kv*identity(544)+diag(554)%*%c)
+  u <- runif(1)
+  aceptance.prob <- min(1, t(etta-etta.old)%*%(b-Oral$Y)+Oral$E%*%(t(exp(etta))-t(exp(etta.old)))+1/2*t(etta.old)%*%diag(544)*c%*%etta.old-1/2*t(etta)%*%diag(544)*c%*%etta)
+  if (u < acceptance.prob){
+    etta.old <- etta
+    pass
+  }
+  else{
+    etta <- etta.old
+  }
+  etta.list <- c(etta.list, etta)
+}
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
